@@ -1,6 +1,24 @@
 from sqlalchemy.orm import Session
 from . import models
 from datetime import datetime, timedelta
+from .schemas import HabitCreate
+
+
+def create_habit(db: Session, habit: HabitCreate):
+    db_habit = models.Habit(**habit.dict())
+    db.add(db_habit)
+    db.commit()
+    db.refresh(db_habit)
+    return db_habit
+
+
+def update_user_telegram_id(db: Session, username: str, telegram_id: int):
+    user = db.query(models.User).filter(models.User.username == username).first()
+    if user:
+        user.telegram_id = telegram_id
+        db.commit()
+        db.refresh(user)
+    return user
 
 
 def get_user(db: Session, user_id: int):
@@ -9,14 +27,6 @@ def get_user(db: Session, user_id: int):
 
 def get_user_by_telegram_id(db: Session, telegram_id: int):
     return db.query(models.User).filter(models.User.telegram_id == telegram_id).first()
-
-
-def create_user(db: Session, telegram_id: int, username: str = None):
-    db_user = models.User(telegram_id=telegram_id, username=username)
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
 
 
 def get_habit(db: Session, habit_id: int):
@@ -72,7 +82,6 @@ def update_habit(
         db: Session,
         habit_id: int,
         name: str = None,
-        reminder_time: str = None,
         is_active: bool = None
 ):
     habit = db.query(models.Habit).filter(models.Habit.id == habit_id).first()
@@ -81,14 +90,13 @@ def update_habit(
 
     if name:
         habit.name = name
-    if reminder_time:
-        habit.reminder_time = reminder_time
     if is_active is not None:
         habit.is_active = is_active
 
     db.commit()
     db.refresh(habit)
     return habit
+
 
 
 def delete_habit(db: Session, habit_id: int):
@@ -99,3 +107,7 @@ def delete_habit(db: Session, habit_id: int):
     db.delete(habit)
     db.commit()
     return True
+
+
+def get_user_by_username(db: Session, username: str):
+    return db.query(models.User).filter(models.User.username == username).first()

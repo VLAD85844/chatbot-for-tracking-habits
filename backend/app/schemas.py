@@ -1,31 +1,38 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, constr
 from datetime import datetime
 from typing import Optional
 
 
 class HabitBase(BaseModel):
     name: str
-    reminder_time: str
 
 
 class HabitCreate(HabitBase):
-    user_id: int
+    telegram_id: int
 
 
-class HabitResponse(HabitCreate):
+class HabitResponse(HabitBase):
     id: int
+    user_id: int
     completion_count: int
     streak: int
     last_completed: Optional[datetime] = None
+    is_active: bool
+    job_id: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat(),
+        }
 
 
 class UserBase(BaseModel):
-    telegram_id: int
-    username: Optional[str] = None
+    username: str
 
 
-class UserCreate(UserBase):
-    pass
+class UserInDB(UserBase):
+    hashed_password: str
 
 
 class UserResponse(UserBase):
@@ -33,14 +40,13 @@ class UserResponse(UserBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
-class CompleteHabitRequest(BaseModel):
-    telegram_id: int
+class UserCreate(UserBase):
+    password: constr(min_length=6)
 
 
 class HabitUpdate(BaseModel):
     name: Optional[str] = None
-    reminder_time: Optional[str] = None
     is_active: Optional[bool] = None
